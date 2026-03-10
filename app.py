@@ -34,24 +34,24 @@ st.title("Climate and COVID Monitoring Dashboard")
 # -----------------------------------------------------------
 # LOAD DATASET
 # -----------------------------------------------------------
-
 @st.cache_data(ttl=10)
 def load_data():
 
-    # Check whether dataset exists
-    if not os.path.exists("climate_data.csv"):
-        st.error("Dataset file 'climate_data.csv' not found in repository.")
-        st.stop()
-
-    # Load CSV dataset
+    # Load dataset
     df = pd.read_csv("climate_data.csv")
+
+    # Standardise column names (lowercase and remove spaces)
+    df.columns = df.columns.str.lower().str.strip()
+
+    # Ensure required column exists
+    if "date" not in df.columns:
+        st.error("The dataset must contain a 'date' column.")
+        st.stop()
 
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
 
     return df
-
-
 df = load_data()
 
 
