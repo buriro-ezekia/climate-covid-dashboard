@@ -26,34 +26,17 @@ The system integrates statistical analysis, predictive modelling, and interactiv
 ---
 
 ## Analytical Workflow
-\begin{table}[h]
-\centering
-\caption{Analytical Workflow of the Climate–COVID Dashboard}
-\begin{tabular}{ll}
-\hline
-\textbf{Stage} & \textbf{Description} \\ 
-\hline
-Data Collection & Gathering climate and COVID-19 case data from structured sources \\
-
-Data Cleaning and Preparation & Handling missing values, formatting dates, and preparing variables for analysis \\
-
-Exploratory Data Analysis & Visualising distributions and relationships between climate variables and case counts \\
-
-Trend Smoothing (Rolling Averages) & Applying rolling statistics to reduce short-term fluctuations in case counts \\
-
-Climate–Case Regression Modelling & Estimating the relationship between climate factors and COVID-19 cases \\
-
-Time-Series Forecasting & Predicting future case trends using historical time-series models \\
-
-Seasonality Decomposition & Identifying recurring temporal patterns in case counts \\
-
-Anomaly Detection & Detecting unusual spikes or drops in case counts using statistical thresholds \\
-
-Interactive Dashboard & Presenting results through an interactive analytical interface \\
-
-\hline
-\end{tabular}
-\end{table}
+| Stage | Description |
+|------|-------------|
+| Data Collection | Gathering climate and COVID-19 case data from structured sources |
+| Data Cleaning and Preparation | Handling missing values, formatting dates, and preparing variables for analysis |
+| Exploratory Data Analysis | Visualising distributions and relationships between climate variables and case counts |
+| Trend Smoothing (Rolling Averages) | Applying rolling statistics to reduce short-term fluctuations in case counts |
+| Climate–Case Regression Modelling | Estimating the relationship between climate factors and COVID-19 cases |
+| Time-Series Forecasting | Predicting future case trends using historical time-series models |
+| Seasonality Decomposition | Identifying recurring temporal patterns in case counts |
+| Anomaly Detection | Detecting unusual spikes or drops in case counts using statistical thresholds |
+| Interactive Dashboard | Presenting results through an interactive analytical interface |
 ---
 
 ## Technologies Used
