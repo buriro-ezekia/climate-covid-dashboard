@@ -227,6 +227,95 @@ forecast_fig = px.line(
 st.plotly_chart(forecast_fig, use_container_width=True)
 
 # -----------------------------------------------------------
+# TIME-SERIES DECOMPOSITION (TREND + SEASONALITY)
+# -----------------------------------------------------------
+
+import statsmodels.api as sm
+
+st.subheader("Trend and Seasonality Analysis")
+
+# Prepare time-series data
+ts = df_filtered.set_index("date")["covid_cases"]
+
+# Ensure regular frequency
+ts = ts.asfreq("D")
+
+# Fill missing values if necessary
+ts = ts.fillna(method="ffill")
+
+# Decompose the time series
+decomposition = sm.tsa.seasonal_decompose(ts, model="additive", period=30)
+
+trend = decomposition.trend
+seasonal = decomposition.seasonal
+residual = decomposition.resid
+
+# Convert components to DataFrame
+decomp_df = pd.DataFrame({
+    "date": ts.index,
+    "trend": trend,
+    "seasonal": seasonal,
+    "residual": residual
+})
+
+# Plot trend
+trend_fig = px.line(
+    decomp_df,
+    x="date",
+    y="trend",
+    title="Long-Term Trend in COVID Cases"
+)
+
+st.plotly_chart(trend_fig, use_container_width=True)
+
+# Plot seasonal pattern
+seasonal_fig = px.line(
+    decomp_df,
+    x="date",
+    y="seasonal",
+    title="Seasonal Pattern"
+)
+
+st.plotly_chart(seasonal_fig, use_container_width=True)
+
+# -----------------------------------------------------------
+# ANOMALY DETECTION
+# -----------------------------------------------------------
+
+st.subheader("Anomaly Detection")
+
+# Detect anomalies using standard deviation threshold
+mean_cases = ts.mean()
+std_cases = ts.std()
+
+threshold_upper = mean_cases + 2 * std_cases
+threshold_lower = mean_cases - 2 * std_cases
+
+anomalies = ts[(ts > threshold_upper) | (ts < threshold_lower)]
+
+anomaly_df = ts.reset_index()
+anomaly_df.columns = ["date","cases"]
+
+anomaly_fig = px.scatter(
+    anomaly_df,
+    x="date",
+    y="cases",
+    title="Detected Anomalies in COVID Cases"
+)
+
+# Highlight anomaly points
+anomaly_fig.add_scatter(
+    x=anomalies.index,
+    y=anomalies.values,
+    mode="markers",
+    marker=dict(color="red", size=8),
+    name="Anomaly"
+)
+
+st.plotly_chart(anomaly_fig, use_container_width=True)
+
+
+# -----------------------------------------------------------
 # DATA TABLE
 # -----------------------------------------------------------
 
