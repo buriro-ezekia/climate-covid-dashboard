@@ -1,9 +1,9 @@
 dash
-plotly
-pandas
 sqlalchemy
 psycopg2-binary
 gunicorn
-streamlit
-altair
+streamlit==1.32.0
+pandas
+plotly
+altair==5.3.0
 statsmodels
