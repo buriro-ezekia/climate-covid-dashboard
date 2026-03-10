@@ -178,6 +178,53 @@ st.write(
     f"and humidity {humidity_input}%: **{int(prediction[0])} cases**"
 )
 
+# -----------------------------------------------------------
+# TIME-SERIES FORECASTING (30-DAY PREDICTION)
+# -----------------------------------------------------------
+
+import statsmodels.api as sm
+
+st.subheader("30-Day COVID Case Forecast")
+
+# Prepare time-series data
+ts = df_filtered.set_index("date")["covid_cases"]
+
+# Fit ARIMA model
+model = sm.tsa.ARIMA(ts, order=(2,1,2))
+results = model.fit()
+
+# Forecast next 30 days
+forecast_steps = 30
+forecast = results.forecast(steps=forecast_steps)
+
+# Create future dates
+future_dates = pd.date_range(
+    start=ts.index.max() + pd.Timedelta(days=1),
+    periods=forecast_steps
+)
+
+forecast_df = pd.DataFrame({
+    "date": future_dates,
+    "forecast_cases": forecast
+})
+
+# Combine historical and forecast data
+historical_df = ts.reset_index()
+historical_df.columns = ["date","cases"]
+
+forecast_df_plot = forecast_df.rename(columns={"forecast_cases":"cases"})
+
+combined = pd.concat([historical_df, forecast_df_plot])
+
+# Plot forecast
+forecast_fig = px.line(
+    combined,
+    x="date",
+    y="cases",
+    title="Historical and Forecasted COVID Cases"
+)
+
+st.plotly_chart(forecast_fig, use_container_width=True)
 
 # -----------------------------------------------------------
 # DATA TABLE
