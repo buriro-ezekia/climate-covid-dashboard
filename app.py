@@ -34,22 +34,27 @@ st.title("Climate and COVID Monitoring Dashboard")
 # -----------------------------------------------------------
 # LOAD DATASET
 # -----------------------------------------------------------
+
 @st.cache_data(ttl=10)
 def load_data():
 
     # Load dataset
     df = pd.read_csv("climate_data.csv")
 
-    # Standardise column names (lowercase and remove spaces)
+    # Remove accidental index column created during export
+    if "Unnamed: 0" in df.columns:
+        df = df.drop(columns=["Unnamed: 0"])
+
+    # Standardise column names
     df.columns = df.columns.str.lower().str.strip()
 
-    # Ensure required column exists
-    if "date" not in df.columns:
-        st.error("The dataset must contain a 'date' column.")
-        st.stop()
-
     # Convert date column to datetime
-    df["date"] = pd.to_datetime(df["date"])
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"])
+    else:
+        st.error("The dataset must contain a 'date' column.")
+        st.write("Available columns:", df.columns)
+        st.stop()
 
     return df
 df = load_data()
