@@ -27,9 +27,9 @@ The system integrates statistical analysis, predictive modelling, and interactiv
 
 ## Analytical Workflow
 Data Collection
-↓
+   ↓
 Data Cleaning and Preparation
-↓
+         ↓
 Exploratory Data Analysis
 ↓
 Trend Smoothing (Rolling Averages)
@@ -54,9 +54,6 @@ Interactive Dashboard
 - Streamlit  
 - Scikit-Learn  
 - Statsmodels  
-
-The dashboard is implemented using **:contentReference[oaicite:0]{index=0}** with interactive visualisation from **:contentReference[oaicite:1]{index=1}**.
-
 ---
 
 ## Example Insights
@@ -72,13 +69,10 @@ The dashboard enables analysis of:
 ---
 
 ## Running the Project
-1. Clone the repository
 git clone https://github.com/buriro-ezekia/climate-covid-dashboard.git
 
-2. Install dependencies
 pip install -r requirements.txt
 
-3. Run the application
 streamlit run app.py
 
 
