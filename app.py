@@ -1,211 +1,188 @@
 # -----------------------------------------------------------
-# Climate and COVID Dashboard
+# Climate and COVID Analytical Dashboard
 # -----------------------------------------------------------
-# Streamlit dashboard analysing the relationship between
-# climate variables (temperature, humidity) and COVID cases.
-#
-# Data is loaded from a CSV file stored in the repository,
-# making the app compatible with Streamlit Cloud deployment.
-# -----------------------------------------------------------
-
-
-# -----------------------------------------------------------
-# IMPORT REQUIRED LIBRARIES
+# Advanced dashboard including:
+# - interactive filters
+# - rolling averages
+# - predictive modelling
+# - seasonality analysis
 # -----------------------------------------------------------
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 
 # -----------------------------------------------------------
 # PAGE CONFIGURATION
 # -----------------------------------------------------------
 
-st.set_page_config(
-    page_title="Climate & COVID Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="Climate & COVID Dashboard", layout="wide")
 
 st.title("Climate and COVID Monitoring Dashboard")
 
 
 # -----------------------------------------------------------
-# LOAD DATASET
+# LOAD DATA
 # -----------------------------------------------------------
 
-@st.cache_data(ttl=10)
+@st.cache_data
 def load_data():
 
-    # Load dataset
     df = pd.read_csv("climate_data.csv")
 
-    # Remove accidental index column created during export
-    if "Unnamed: 0" in df.columns:
-        df = df.drop(columns=["Unnamed: 0"])
-
-    # Standardise column names
     df.columns = df.columns.str.lower().str.strip()
 
-    # Convert date column to datetime
-    if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"])
-    else:
-        st.error("The dataset must contain a 'date' column.")
-        st.write("Available columns:", df.columns)
-        st.stop()
+    df["date"] = pd.to_datetime(df["date"])
 
     return df
+
+
 df = load_data()
 
 
 # -----------------------------------------------------------
-# SIDEBAR FILTERS
+# INTERACTIVE FILTERS
 # -----------------------------------------------------------
 
-st.sidebar.header("Filter Data")
+st.sidebar.header("Data Filters")
 
-# Date range filter
-start_date = st.sidebar.date_input(
-    "Start Date",
-    df["date"].min()
+date_range = st.sidebar.date_input(
+    "Select Date Range",
+    [df["date"].min(), df["date"].max()]
 )
 
-end_date = st.sidebar.date_input(
-    "End Date",
-    df["date"].max()
+temp_range = st.sidebar.slider(
+    "Temperature Range",
+    float(df["temperature"].min()),
+    float(df["temperature"].max()),
+    (float(df["temperature"].min()), float(df["temperature"].max()))
 )
 
-# Apply filtering
-df = df[(df["date"] >= pd.to_datetime(start_date)) &
-        (df["date"] <= pd.to_datetime(end_date))]
+humidity_range = st.sidebar.slider(
+    "Humidity Range",
+    float(df["humidity"].min()),
+    float(df["humidity"].max()),
+    (float(df["humidity"].min()), float(df["humidity"].max()))
+)
+
+df_filtered = df[
+    (df["date"] >= pd.to_datetime(date_range[0])) &
+    (df["date"] <= pd.to_datetime(date_range[1])) &
+    (df["temperature"].between(temp_range[0], temp_range[1])) &
+    (df["humidity"].between(humidity_range[0], humidity_range[1]))
+]
 
 
 # -----------------------------------------------------------
 # KPI METRICS
 # -----------------------------------------------------------
 
-total_cases = df["covid_cases"].sum()
-avg_temp = round(df["temperature"].mean(), 2)
-avg_humidity = round(df["humidity"].mean(), 2)
-records = len(df)
+st.subheader("Key Indicators")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Cases", total_cases)
-col2.metric("Average Temperature", avg_temp)
-col3.metric("Average Humidity", avg_humidity)
-col4.metric("Number of Records", records)
+col1.metric("Total Cases", int(df_filtered["covid_cases"].sum()))
+col2.metric("Average Temperature", round(df_filtered["temperature"].mean(), 2))
+col3.metric("Average Humidity", round(df_filtered["humidity"].mean(), 2))
 
 
 # -----------------------------------------------------------
-# COVID CASES TIME SERIES
+# ROLLING AVERAGE TREND
 # -----------------------------------------------------------
 
-st.subheader("COVID Cases Over Time")
+st.subheader("COVID Cases Trend with Rolling Average")
 
-cases_trend = px.line(
-    df,
+df_filtered["rolling_cases"] = df_filtered["covid_cases"].rolling(window=7).mean()
+
+trend_fig = px.line(
+    df_filtered,
     x="date",
-    y="covid_cases",
-    markers=True,
-    title="COVID Cases Trend"
+    y=["covid_cases", "rolling_cases"],
+    title="Daily Cases and 7-Day Rolling Average"
 )
 
-st.plotly_chart(cases_trend, use_container_width=True)
+st.plotly_chart(trend_fig, use_container_width=True)
 
 
 # -----------------------------------------------------------
-# CLIMATE TRENDS
+# CLIMATE RELATIONSHIPS
 # -----------------------------------------------------------
 
-st.subheader("Temperature and Humidity Trends")
-
-climate_trend = px.line(
-    df,
-    x="date",
-    y=["temperature", "humidity"],
-    title="Climate Trends"
-)
-
-st.plotly_chart(climate_trend, use_container_width=True)
-
-
-# -----------------------------------------------------------
-# CLIMATE vs COVID RELATIONSHIPS
-# -----------------------------------------------------------
-
-st.subheader("Climate vs COVID Relationships")
+st.subheader("Climate Relationships")
 
 col1, col2 = st.columns(2)
 
-scatter_temp = px.scatter(
-    df,
+temp_scatter = px.scatter(
+    df_filtered,
     x="temperature",
     y="covid_cases",
     trendline="ols",
     title="Temperature vs COVID Cases"
 )
 
-scatter_humidity = px.scatter(
-    df,
+humidity_scatter = px.scatter(
+    df_filtered,
     x="humidity",
     y="covid_cases",
     trendline="ols",
     title="Humidity vs COVID Cases"
 )
 
-col1.plotly_chart(scatter_temp, use_container_width=True)
-col2.plotly_chart(scatter_humidity, use_container_width=True)
+col1.plotly_chart(temp_scatter, use_container_width=True)
+col2.plotly_chart(humidity_scatter, use_container_width=True)
 
 
 # -----------------------------------------------------------
-# CORRELATION MATRIX
+# SEASONALITY ANALYSIS
 # -----------------------------------------------------------
 
-st.subheader("Correlation Matrix")
+st.subheader("Monthly Seasonality")
 
-corr = df[["temperature", "humidity", "covid_cases"]].corr()
+df_filtered["month"] = df_filtered["date"].dt.month
 
-heatmap = px.imshow(
-    corr,
-    text_auto=True,
-    color_continuous_scale="RdBu_r",
-    title="Variable Correlation"
+monthly_cases = df_filtered.groupby("month")["covid_cases"].mean().reset_index()
+
+season_fig = px.bar(
+    monthly_cases,
+    x="month",
+    y="covid_cases",
+    title="Average Monthly COVID Cases"
 )
 
-st.plotly_chart(heatmap, use_container_width=True)
+st.plotly_chart(season_fig, use_container_width=True)
 
 
 # -----------------------------------------------------------
-# DISTRIBUTION CHARTS
+# PREDICTIVE MODEL
 # -----------------------------------------------------------
 
-st.subheader("Variable Distributions")
+st.subheader("Predictive Model: Climate → COVID Cases")
 
-col1, col2, col3 = st.columns(3)
+X = df_filtered[["temperature", "humidity"]]
+y = df_filtered["covid_cases"]
 
-temp_hist = px.histogram(df, x="temperature", nbins=20)
-humidity_hist = px.histogram(df, x="humidity", nbins=20)
-cases_hist = px.histogram(df, x="covid_cases", nbins=20)
+model = LinearRegression()
 
-col1.plotly_chart(temp_hist, use_container_width=True)
-col2.plotly_chart(humidity_hist, use_container_width=True)
-col3.plotly_chart(cases_hist, use_container_width=True)
+model.fit(X, y)
 
+temp_input = st.slider("Temperature for prediction", 15.0, 40.0, 25.0)
+humidity_input = st.slider("Humidity for prediction", 20.0, 90.0, 60.0)
 
-# -----------------------------------------------------------
-# DATA PREVIEW
-# -----------------------------------------------------------
+prediction = model.predict([[temp_input, humidity_input]])
 
-st.subheader("Dataset Preview")
-
-st.dataframe(df)
+st.write(
+    f"Predicted COVID cases for temperature {temp_input}°C "
+    f"and humidity {humidity_input}%: **{int(prediction[0])} cases**"
+)
 
 
 # -----------------------------------------------------------
-# FOOTER
+# DATA TABLE
 # -----------------------------------------------------------
 
-st.caption("Interactive dashboard analysing climate conditions and COVID cases.")
+st.subheader("Filtered Dataset")
+
+st.dataframe(df_filtered)
