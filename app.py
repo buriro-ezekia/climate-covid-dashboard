@@ -241,7 +241,8 @@ ts = df_filtered.set_index("date")["covid_cases"]
 ts = ts.asfreq("D")
 
 # Fill missing values if necessary
-ts = ts.fillna(method="ffill")
+# Fill missing values using forward fill
+ts = ts.ffill()
 
 # Decompose the time series
 decomposition = sm.tsa.seasonal_decompose(ts, model="additive", period=30)
